@@ -14,24 +14,9 @@ import static com.codeborne.selenide.Selenide.$;
 
 public class BankRequestTest {
 
-    WebDriver driver;
-
-    @BeforeAll
-    static void setUpAll() {
-        WebDriverManager.chromedriver().setup();
-        System.setProperty("webdriver.chrome.driver", "C:\\Program Files\\chromedriver_win32\\chromedriver.exe");
-    }
-
     @BeforeEach
     void setUp() {
-        driver = new ChromeDriver();
         open("http://localhost:9999");
-    }
-
-    @AfterEach
-    void tearDown() {
-        driver.quit();
-        driver = null;
     }
 
     @Test
