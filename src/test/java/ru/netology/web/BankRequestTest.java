@@ -1,7 +1,11 @@
 package ru.netology.web;
 
-import com.codeborne.selenide.ElementsCollection;
+import org.junit.jupiter.api.AfterEach;
+import org.junit.jupiter.api.BeforeAll;
+import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
+import org.openqa.selenium.WebDriver;
+import org.openqa.selenium.chrome.ChromeDriver;
 
 import static com.codeborne.selenide.Condition.*;
 import static com.codeborne.selenide.Selenide.*;
@@ -9,95 +13,94 @@ import static com.codeborne.selenide.Selenide.$;
 
 public class BankRequestTest {
 
-    @Test
-    void shouldSendRequest() throws InterruptedException {
+    private WebDriver driver;
+
+    @BeforeAll
+    static void setUpAll() {
+        System.setProperty("webdriver.chrome.driver", "C:\\Program Files\\chromedriver_win32\\chromedriver.exe");
+    }
+
+    @BeforeEach
+    void setUp() {
+        driver = new ChromeDriver();
         open("http://localhost:9999");
+    }
 
-        $("h2").shouldHave(text("Заявка на дебетовую карту"));
-        $("h3").shouldHave(text("Альфа-Карта"));
+    @AfterEach
+    void tearDown() {
+        driver.quit();
+        driver = null;
+    }
 
-        ElementsCollection info = $$(".list__item");
-        info.get(0).shouldHave(text("До 2% на все покупки"));
-        info.get(1).shouldHave(text("До 6% годовых на остаток"));
+    @Test
+    void shouldSendRequest() {
+        $$(".heading").find(exactText("Заявка на дебетовую карту")).shouldBe(visible);
+        $$(".heading").find(exactText("Альфа-Карта")).shouldBe(visible);
+
+        $$(".list__item").find(exactText("До 2% на все покупки")).shouldBe(visible);
+        $$(".list__item").find(exactText("До 6% годовых на остаток")).shouldBe(visible);
 
         $(".Order_cardImage__Q69ii").shouldBe(visible);
 
-        ElementsCollection form = $$(".input__control");
-        form.get(0).setValue("Иванова Анна");
-        form.get(1).setValue("+79999999999");
+        $("[data-test-id='name'] input").sendKeys("Иван Петров-Сидоров");
+        $("[data-test-id='phone'] input").sendKeys("+79999999999");
+        $("[data-test-id='agreement']").click();
+        $("button").shouldHave(exactText("Продолжить")).click();
 
-        $(".checkbox__box").click();
-        $("button").click();
-
-        $(".paragraph").shouldHave(exactText("Ваша заявка успешно отправлена! Наш менеджер свяжется с вами в ближайшее время."));
-
-        Thread.sleep(5000);
+        $("[data-test-id='order-success']").shouldHave(exactText("Ваша заявка успешно отправлена! Наш менеджер свяжется с вами в ближайшее время."));
     }
 
     @Test
-    void shouldCheckNameValidationFieldInvalid() throws InterruptedException {
-        open("http://localhost:9999");
-        $("[name=name]").setValue("Ggggggg");
-        $("button").click();
-        ElementsCollection form = $$(".input__sub");
-        form.get(0).shouldHave(text("Имя и Фамилия указаные неверно. Допустимы только русские буквы, пробелы и дефисы."));
-        $(".input_invalid").shouldHave(cssValue("color", "rgba(255, 92, 92, 1)"));
-        Thread.sleep(5000);
+    void shouldCheckNameValidationFieldInvalid() {
+        $("[data-test-id='name'] input").sendKeys("Green7");
+        $("[data-test-id='phone'] input").sendKeys("+79999999999");
+        $("[data-test-id='agreement']").click();
+        $("button").shouldHave(exactText("Продолжить")).click();
+        $("[data-test-id='name'].input_invalid .input__sub").shouldHave(exactText("Имя и Фамилия указаные неверно. Допустимы только русские буквы, пробелы и дефисы."));
     }
 
     @Test
-    void shouldCheckNameValidationFieldEmpty() throws InterruptedException {
-        open("http://localhost:9999");
-        $("[name=phone]").setValue("+77777777777");
-        $(".checkbox__box").click();
-        $("button").click();
-        ElementsCollection form = $$(".input__sub");
-        form.get(0).shouldHave(text("Поле обязательно для заполнения"));
-        $(".input_invalid").shouldHave(cssValue("color", "rgba(255, 92, 92, 1)"));
-        Thread.sleep(5000);
+    void shouldCheckNameValidationFieldEmpty() {
+        $("[data-test-id='name'] input").shouldBe(empty);
+        $("[data-test-id='phone'] input").sendKeys("+79999999999");
+        $("[data-test-id='agreement']").click();
+        $("button").shouldHave(exactText("Продолжить")).click();
+        $("[data-test-id='name'].input_invalid .input__sub").shouldHave(exactText("Поле обязательно для заполнения"));
     }
 
     @Test
-    void shouldCheckTelephoneValidationFieldInvalid() throws InterruptedException {
-        open("http://localhost:9999");
-        $("[name=name]").setValue("Аааааа");
-        $("[name=phone]").setValue("+9999999999");
-        $("button").click();
-        ElementsCollection form = $$(".input__sub");
-        form.get(1).shouldHave(text("Телефон указан неверно. Должно быть 11 цифр, например, +79012345678."));
-        $(".input_invalid").shouldHave(cssValue("color", "rgba(255, 92, 92, 1)"));
-        Thread.sleep(5000);
+    void shouldCheckPhoneValidationFieldInvalid() {
+        $("[data-test-id='name'] input").sendKeys("Петр Иванов");
+        $("[data-test-id='phone'] input").sendKeys("7999999999");
+        $("[data-test-id='agreement']").click();
+        $("button").shouldHave(exactText("Продолжить")).click();
+        $("[data-test-id='phone'].input_invalid .input__sub").shouldHave(exactText("Телефон указан неверно. Должно быть 11 цифр, например, +79012345678."));
     }
 
     @Test
-    void shouldCheckTelephoneValidationFieldEmpty() throws InterruptedException {
-        open("http://localhost:9999");
-        $("[name=name]").setValue("Аааааа");
-        $(".checkbox__box").click();
-        $("button").click();
-        ElementsCollection form = $$(".input__sub");
-        form.get(1).shouldHave(text("Поле обязательно для заполнения"));
-        $(".input_invalid").shouldHave(cssValue("color", "rgba(255, 92, 92, 1)"));
-        Thread.sleep(5000);
+    void shouldCheckPhoneValidationFieldEmpty() {
+        $("[data-test-id='name'] input").sendKeys("Петр Иванов");
+        $("[data-test-id='phone'] input").shouldBe(empty);
+        $("[data-test-id='agreement']").click();
+        $("button").shouldHave(exactText("Продолжить")).click();
+        $("[data-test-id='phone'].input_invalid .input__sub").shouldHave(exactText("Поле обязательно для заполнения"));
     }
 
     @Test
-    void shouldCheckCheckBoxValidationFieldEmpty() throws InterruptedException {
-        open("http://localhost:9999");
-        $("[name=name]").setValue("Аааааа");
-        $("[name=phone]").setValue("+99999999999");
-        $("button").click();
-        $(".input_invalid").shouldHave(cssValue("color", "rgba(255, 92, 92, 1)"));
-        Thread.sleep(5000);
+    void shouldCheckCheckBoxValidationFieldEmpty() {
+        $("[data-test-id='name'] input").sendKeys("Петр Иванов");
+        $("[data-test-id='phone'] input").sendKeys("+79999999999");
+        $("[data-test-id='agreement']").shouldNotBe(checked);
+        $("button").shouldHave(exactText("Продолжить")).click();
+        $("[data-test-id='agreement'].input_invalid").shouldBe(visible);
     }
 
     @Test
-    void shouldNotSendRequestWhenAllFieldEmpty() throws InterruptedException {
-        open("http://localhost:9999");
-        $("button").click();
-        ElementsCollection form = $$(".input__sub");
-        form.get(0).shouldHave(text("Поле обязательно для заполнения"));
-        $(".input_invalid").shouldHave(cssValue("color", "rgba(255, 92, 92, 1)"));
-        Thread.sleep(5000);
+    void shouldNotSendRequestWhenAllFieldEmpty() {
+        $("[data-test-id='name'] input").shouldBe(empty);
+        $("[data-test-id='phone'] input").shouldBe(empty);
+        $("[data-test-id='agreement']").shouldNotBe(checked);
+        $("button").shouldHave(exactText("Продолжить")).click();
+        $("[data-test-id='name'].input_invalid .input__sub").shouldHave(exactText("Поле обязательно для заполнения"));
     }
 }
